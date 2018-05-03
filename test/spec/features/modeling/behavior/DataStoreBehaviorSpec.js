@@ -69,6 +69,32 @@ describe('features/modeling/behavior - data store', function() {
       expect(dataStoreReference.dataStoreRef).not.to.exist;
     }));
 
+
+    it('should create DataStoreReference on collaboration', inject(function(elementRegistry, modeling, bpmnjs) {
+
+      // give
+      var collaborationElement = elementRegistry.get('Collaboration'),
+          participantElement = elementRegistry.get('Participant'),
+          participantBo = participantElement.businessObject;
+
+      // when
+      var dataStoreShape = modeling.createShape(
+        { type: 'bpmn:DataStoreReference' },
+        { x: 420, y: 370 },
+        collaborationElement
+      );
+
+      var dataStoreReference = dataStoreShape.businessObject;
+
+      // then
+      // reference correctly wired
+      expect(dataStoreReference.$parent).to.eql(participantBo.processRef);
+      expect(participantBo.processRef.flowElements).to.contain(dataStoreReference);
+
+      // no actual data store created
+      expect(dataStoreReference.dataStoreRef).not.to.exist;
+    }));
+
   });
 
 
@@ -79,7 +105,7 @@ describe('features/modeling/behavior - data store', function() {
     beforeEach(bootstrapModeler(processDiagramXML, { modules: testModules }));
 
 
-    it('should move DataStoreReference', inject(function(elementRegistry, modeling, bpmnjs) {
+    it('should move DataStoreReference to Participant', inject(function(elementRegistry, modeling, bpmnjs) {
 
       // give
       var participantElement = elementRegistry.get('Participant'),
@@ -94,6 +120,25 @@ describe('features/modeling/behavior - data store', function() {
       // reference correctly wired
       expect(dataStoreReference.parent).to.eql(participantElement);
       expect(dataStoreReferenceBo.$parent).to.eql(participantBo.processRef);
+    }));
+
+
+    it('should move DataStoreReference to Collaboration', inject(function(elementRegistry, modeling, bpmnjs) {
+
+      // give
+      var collaborationElement = elementRegistry.get('Collaboration'),
+          participant2Element = elementRegistry.get('Participant_2'),
+          participant2Bo = participant2Element.businessObject,
+          dataStoreReference = elementRegistry.get('DataStoreReference'),
+          dataStoreReferenceBo = dataStoreReference.businessObject;
+
+      // when
+      modeling.moveElements([ dataStoreReference ], { x: 0, y: 250 }, collaborationElement);
+
+      // then
+      // reference correctly wired to closest participant
+      expect(dataStoreReference.parent).to.eql(participant2Element);
+      expect(dataStoreReferenceBo.$parent).to.eql(participant2Bo.processRef);
     }));
 
   });
